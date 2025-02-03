@@ -1,0 +1,18 @@
+:root {
+    --color-background: #D3E7FC;
+    --color-text: #2992FA;
+    --color-title: #264085;
+    --color-link: #0243d9;
+    --color-header: #BBDBED;
+    --color-accent: var(--color-title);
+}
+
+/* Dark mode overrides */
+body.dark-mode {
+    --color-background: #1b1b1b; /* Dark background */
+    --color-text: #a8d0ff; /* Lighter text for better contrast */
+    --color-title: #b0c6f4; /* Lighter title */
+    --color-link: #8ab8ff; /* Softer link color */
+    --color-header: #333333; /* Dark header */
+    --color-accent: #8ab8ff; /* Accent for contrast */
+}
