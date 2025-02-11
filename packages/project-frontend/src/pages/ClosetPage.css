@@ -13,10 +13,10 @@ body {
 /* Navigation */
 .category-nav {
   display: flex;
-  justify-content: center;
+  justify-content: left;
   gap: 10px;
   flex-wrap: wrap;
-  margin: 2em 0;
+  margin: 4em 0em 0em 1em;
 }
 
 .category-button {
@@ -36,7 +36,7 @@ body {
 /* Clothing Grid */
 .clothing-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(10em, 1fr));
   gap: 15px;
   padding: 20px;
 }
