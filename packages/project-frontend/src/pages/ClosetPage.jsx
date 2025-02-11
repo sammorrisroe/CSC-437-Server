@@ -1,70 +1,61 @@
 import React, { useState } from "react";
 import "./ClosetPage.css";
-import Cropper from "react-cropper";
-import "cropperjs/dist/cropper.css"; // Import styles for the cropper
 
-const dummyClothes = [
-  { id: 1, type: "shirt", isFavorite: false, description: "", imageUrl: "/shirt-icon.png" },
-  { id: 2, type: "shirt", isFavorite: false, description: "", imageUrl: "/shirt-icon.png" },
-  { id: 3, type: "shirt", isFavorite: false, description: "", imageUrl: "/shirt-icon.png" },
-  // Add other dummy items
-];
+const GRID_SIZE = 20;
+const categories = ["All", "Favorites", "Shirts", "Pants", "Jackets", "Hats", "Shoes", "Add"];
 
 const ClosetPage = () => {
-  const [clothes, setClothes] = useState(dummyClothes);
+  const [clothes, setClothes] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editIndex, setEditIndex] = useState(null); // Track the item being edited
   const [newClothing, setNewClothing] = useState({
+    title: "",
     type: "shirt",
     isFavorite: false,
     description: "",
     imageUrl: null,
   });
-  const [imageFile, setImageFile] = useState(null); // Store the selected image file
-  const [cropper, setCropper] = useState(null); // Reference to the cropper instance
-
-  const categories = ["All", "Favorites", "Shirts", "Pants", "Jackets", "Hats", "Shoes", "Add"];
 
   const handleAddClothes = () => {
+    setEditIndex(null); // Ensure it's a new item
+    setShowModal(true);
+    setNewClothing({ title: "", type: "shirt", isFavorite: false, description: "", imageUrl: null });
+  };
+
+  const handleEditClothes = (index) => {
+    setEditIndex(index);
+    setNewClothing(clothes[index]);
     setShowModal(true);
   };
 
-  const handleCategoryChange = (e) => {
-    setNewClothing({
-      ...newClothing,
-      type: e.target.value,
-    });
+  const handleInputChange = (e) => {
+    setNewClothing({ ...newClothing, [e.target.name]: e.target.value });
   };
 
   const handleFavoriteToggle = () => {
-    setNewClothing({
-      ...newClothing,
-      isFavorite: !newClothing.isFavorite,
-    });
+    setNewClothing({ ...newClothing, isFavorite: !newClothing.isFavorite });
   };
 
-  const handleDescriptionChange = (e) => {
-    setNewClothing({
-      ...newClothing,
-      description: e.target.value,
-    });
-  };
-
-  const handleImageChange = (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImageFile(URL.createObjectURL(file)); // Create a preview URL for the image
+      setNewClothing({ ...newClothing, imageUrl: URL.createObjectURL(file) });
     }
   };
 
   const handleSaveClothing = () => {
-    // Get the cropped image data
-    if (cropper) {
-      const croppedImage = cropper.getCroppedCanvas().toDataURL();
-      setClothes([...clothes, { ...newClothing, id: clothes.length + 1, imageUrl: croppedImage }]);
-      setShowModal(false);
-      setNewClothing({ type: "shirt", isFavorite: false, description: "", imageUrl: null });
-      setImageFile(null); // Reset the image file state
+    if (!newClothing.imageUrl || !newClothing.title) return;
+
+    if (editIndex !== null) {
+      const updatedClothes = [...clothes];
+      updatedClothes[editIndex] = newClothing;
+      setClothes(updatedClothes);
+    } else {
+      setClothes([...clothes, newClothing]);
     }
+
+    setShowModal(false);
+    setNewClothing({ title: "", type: "shirt", isFavorite: false, description: "", imageUrl: null });
   };
 
   return (
@@ -78,31 +69,40 @@ const ClosetPage = () => {
         ))}
       </nav>
 
-      {/* Clothing Grid */}
+      {/* Dynamic Clothing Grid */}
       <div className="clothing-grid">
-        {clothes.map((item) => (
-          <div key={item.id} className="clothing-item">
-            <img src={item.imageUrl} alt="Clothing item" />
-            <div>{item.isFavorite && <span>⭐</span>}</div>
-            <p>{item.description}</p>
+        {[...clothes, ...Array(GRID_SIZE - clothes.length).fill(null)].map((item, index) => (
+          <div
+            key={index}
+            className={`grid-slot ${item ? "filled" : "empty"}`}
+            onClick={item ? () => handleEditClothes(index) : handleAddClothes}
+          >
+            {item ? (
+              <>
+                <img src={item.imageUrl} alt={item.title} className="clothing-image" />
+                <p className="clothing-title">{item.title}</p>
+              </>
+            ) : (
+              <div className="add-button">+ Add Clothes</div>
+            )}
           </div>
         ))}
-
-        {/* Add Clothes Button */}
-        <div className="clothing-item add-button" onClick={handleAddClothes}>
-          <span>+ Add Clothes</span>
-        </div>
       </div>
 
-      {/* Modal for Adding Clothes */}
+      {/* Modal for Adding/Editing Clothes */}
       {showModal && (
         <div className="modal">
           <div className="modal-content">
-            <h2>Add New Clothing</h2>
+            <h2>{editIndex !== null ? "Edit Clothing" : "Add New Clothing"}</h2>
+
+            <div className="form-group">
+              <label>Title</label>
+              <input type="text" name="title" value={newClothing.title} onChange={handleInputChange} required />
+            </div>
 
             <div className="form-group">
               <label>Category</label>
-              <select value={newClothing.type} onChange={handleCategoryChange}>
+              <select name="type" value={newClothing.type} onChange={handleInputChange}>
                 <option value="shirt">Shirt</option>
                 <option value="pants">Pants</option>
                 <option value="jacket">Jacket</option>
@@ -113,39 +113,15 @@ const ClosetPage = () => {
 
             <div className="form-group">
               <label>Favorite</label>
-              <input
-                type="checkbox"
-                checked={newClothing.isFavorite}
-                onChange={handleFavoriteToggle}
-              />
-              <span>⭐</span>
-            </div>
-
-            <div className="form-group">
-              <label>Description</label>
-              <textarea
-                value={newClothing.description}
-                onChange={handleDescriptionChange}
-                placeholder="Add a short description"
-              />
+              <input type="checkbox" checked={newClothing.isFavorite} onChange={handleFavoriteToggle} />
             </div>
 
             <div className="form-group">
               <label>Upload Image</label>
-              <input type="file" accept="image/*" onChange={handleImageChange} />
+              <input type="file" accept="image/*" onChange={handleImageUpload} />
             </div>
 
-            {imageFile && (
-              <div className="form-group">
-                <Cropper
-                  src={imageFile}
-                  style={{ width: "100%", height: "auto" }}
-                  aspectRatio={1}
-                  guides={false}
-                  ref={(cropperInstance) => setCropper(cropperInstance)}
-                />
-              </div>
-            )}
+            {newClothing.imageUrl && <img src={newClothing.imageUrl} alt="Preview" className="preview-image" />}
 
             <button onClick={handleSaveClothing}>Save</button>
             <button onClick={() => setShowModal(false)}>Cancel</button>
