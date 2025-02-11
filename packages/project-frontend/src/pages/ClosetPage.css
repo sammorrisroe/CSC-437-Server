@@ -1,0 +1,125 @@
+body {
+  margin: 0;
+  overflow-x: hidden; /* Prevents unwanted horizontal scrolling */
+}
+
+
+.closet-container {
+  width: 99vw;  /* Full viewport width */
+  max-width: 100%; /* Ensure it does not exceed the viewport */
+  padding: 0px;
+  text-align: center;
+}
+
+
+/* Category Navigation */
+.category-nav {
+  display: flex;
+  justify-content: left;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 5em; /* Sets the distance from the top of the page */
+  margin-bottom: 15px;
+}
+
+.category-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+.category-button:hover {
+  text-decoration: underline;
+}
+
+/* ClosetPage.css */
+.clothing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 20px;
+}
+
+.clothing-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.add-button {
+  background-color: #f1f1f1;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 300px;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+
+
+.clothing-item:hover {
+  transform: scale(1.05); /* Slight zoom effect on hover */
+}
+
+/* Clothing Item Image 
+.clothing-item img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+}
+*/
+
+/* ClosetPage.css */
+.modal-content {
+  width: 350px;
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+input[type="file"] {
+  display: block;
+  margin-top: 10px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+
+
+
+
