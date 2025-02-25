@@ -1,11 +1,12 @@
-import ClosetPage from "./pages/ClosetPage";
+
+import OutfitPage from "./pages/OutfitPage";
 import Header from "./components/header";
 
 function App() {
   return (
     <div>
-      <Header/>
-      <ClosetPage />
+      
+      <OutfitPage />
     </div>
   );
 }

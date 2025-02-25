@@ -1,0 +1,144 @@
+.outfit-container {
+  padding: 20px;
+}
+
+.category-nav {
+  display: flex;
+  justify-content: left;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 4em 0em 0em 1em;
+}
+
+.category-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 5px 10px;
+  transition: 0.2s ease-in-out;
+}
+
+.category-button:hover {
+  text-decoration: underline;
+  transform: scale(1.1);
+}
+
+.outfit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10em, 1fr)); /* Dynamic grid */
+  gap: 15px;
+  padding: 20px;
+}
+
+.grid-slot {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed #ccc;
+  transition: 0.2s;
+  position: relative;
+}
+
+.grid-slot.filled {
+  border: none;
+}
+
+.outfit-4x1-grid {
+  display: grid;
+  grid-template-rows: repeat(4, auto);
+  gap: 5px;
+  justify-items: center;
+}
+
+.outfit-row {
+  display: flex;
+  justify-content: center;
+}
+
+.outfit-row img {
+  max-width: 100%;
+  height: auto;
+}
+
+.outfit-title {
+  margin-top: 10px;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Hover Effects */
+.grid-slot.empty:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+}
+
+.grid-slot.filled:hover {
+  transform: scale(1.05);
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Add Button */
+.add-button {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: 0.3s;
+  margin: 20px auto;
+  width: fit-content;
+}
+
+.add-button:hover {
+  background-color: #0056b3;
+  box-shadow: 0px 0px 10px rgba(0, 123, 255, 0.5);
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 350px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+input[type="text"], select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.preview-image {
+  width: 100px;
+  margin-top: 10px;
+  border-radius: 5px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px;
+  cursor: pointer;
+}
