@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./OutfitPage.css";
+import Spinner from "./Spinner"; // Import your Spinner component
 
 const GRID_SIZE = 20;
 
@@ -32,18 +33,19 @@ const shoesOptions = [
   { title: "Running Shoes", imageUrl: "/images/running_shoes.jpg" },
 ];
 
-const OutfitPage = () => {
-  const [outfits, setOutfits] = useState([
-    {
-      title: "Casual Day",
-      hat: hatOptions[0],
-      shirt: shirtOptions[0],
-      jacket: jacketOptions[0],
-      pants: pantsOptions[0],
-      shoes: shoesOptions[0],
-    },
-  ]);
+// Predefined outfit for "Casual Day"
+const casualDayOutfit = {
+  title: "Casual Day",
+  hat: hatOptions[0],
+  shirt: shirtOptions[0],
+  jacket: jacketOptions[0],
+  pants: pantsOptions[0],
+  shoes: shoesOptions[0],
+};
 
+const OutfitPage = () => {
+  const [outfits, setOutfits] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editIndex, setEditIndex] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -56,6 +58,22 @@ const OutfitPage = () => {
     pants: null,
     shoes: null,
   });
+
+  // Simulate fetching data when component mounts
+  useEffect(() => {
+    // Set loading to true to show the spinner
+    setLoading(true);
+    
+    // Simulate API fetch delay with setTimeout
+    const fetchTimeout = setTimeout(() => {
+      // After 1 second, set the outfits and turn off loading
+      setOutfits([casualDayOutfit]);
+      setLoading(false);
+    }, 1000); // 1 second delay
+    
+    // Cleanup function to clear the timeout if component unmounts
+    return () => clearTimeout(fetchTimeout);
+  }, []);
 
   const handleAddOutfit = () => {
     setEditIndex(null);
@@ -138,32 +156,43 @@ const OutfitPage = () => {
       </nav>
 
       <div className="outfit-grid">
-        {[...outfits, ...Array(GRID_SIZE - outfits.length).fill(null)].map((item, index) => {
-          if (item) {
-            return (
-              <div key={index} className="grid-slot filled" onClick={() => handleEditOutfit(index)}>
-                <div className="outfit-4x1-grid">
-                  <div className="outfit-row hat">{item.hat && <img src={item.hat.imageUrl} alt="Hat" />}</div>
-                  <div className="outfit-row shirt-jacket">
-                    {item.shirt && <img src={item.shirt.imageUrl} alt="Shirt" />}
-                    {item.jacket && <img src={item.jacket.imageUrl} alt="Jacket" />}
+        {loading ? (
+          // Display a single grid slot with the spinner when loading
+          <div className="grid-slot loading-slot">
+            <div className="loading-container">
+              <Spinner className="text-blue-500 size-12" />
+              <p>Loading outfits...</p>
+            </div>
+          </div>
+        ) : (
+          // Display the normal grid when not loading
+          [...outfits, ...Array(GRID_SIZE - outfits.length).fill(null)].map((item, index) => {
+            if (item) {
+              return (
+                <div key={index} className="grid-slot filled" onClick={() => handleEditOutfit(index)}>
+                  <div className="outfit-4x1-grid">
+                    <div className="outfit-row hat">{item.hat && <img src={item.hat.imageUrl} alt="Hat" />}</div>
+                    <div className="outfit-row shirt-jacket">
+                      {item.shirt && <img src={item.shirt.imageUrl} alt="Shirt" />}
+                      {item.jacket && <img src={item.jacket.imageUrl} alt="Jacket" />}
+                    </div>
+                    <div className="outfit-row pants">{item.pants && <img src={item.pants.imageUrl} alt="Pants" />}</div>
+                    <div className="outfit-row shoes">{item.shoes && <img src={item.shoes.imageUrl} alt="Shoes" />}</div>
                   </div>
-                  <div className="outfit-row pants">{item.pants && <img src={item.pants.imageUrl} alt="Pants" />}</div>
-                  <div className="outfit-row shoes">{item.shoes && <img src={item.shoes.imageUrl} alt="Shoes" />}</div>
+                  <p className="outfit-title">{item.title}</p>
                 </div>
-                <p className="outfit-title">{item.title}</p>
-              </div>
-            );
-          } else if (index === outfits.length) {
-            return (
-              <div key={index} className="grid-slot empty" onClick={handleAddOutfit}>
-                <div className="add-button">+ Add Outfit</div>
-              </div>
-            );
-          } else {
-            return <div key={index} className="grid-slot empty"></div>;
-          }
-        })}
+              );
+            } else if (index === outfits.length) {
+              return (
+                <div key={index} className="grid-slot empty" onClick={handleAddOutfit}>
+                  <div className="add-button">+ Add Outfit</div>
+                </div>
+              );
+            } else {
+              return <div key={index} className="grid-slot empty"></div>;
+            }
+          })
+        )}
       </div>
 
       {showModal && (
