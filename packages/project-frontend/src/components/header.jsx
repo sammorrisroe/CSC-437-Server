@@ -1,10 +1,25 @@
-import { useState } from "react";
-import "./Header.css"; // Import CSS file for styling
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import "./Header.css";
 import logo from "../assets/logo.png";
 import defaultUser from "../assets/user.png";
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(
+    localStorage.getItem("darkMode") === "true"
+  );
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark-mode");
+      document.body.classList.add("dark-mode"); // Apply to body
+    } else {
+      document.documentElement.classList.remove("dark-mode");
+      document.body.classList.remove("dark-mode"); // Remove from body
+    }
+    localStorage.setItem("darkMode", isDarkMode);
+  }, [isDarkMode]);
 
   return (
     <header className="header">
@@ -21,12 +36,22 @@ export default function Header() {
 
       {/* Navigation Links (Hidden on Mobile, Visible on Desktop) */}
       <nav className={`nav-links ${isOpen ? "open" : ""}`}>
-        {["Home", "Closet", "Outfits", "Style Tracker", "Create"].map((link) => (
-          <a key={link} href={`/${link.toLowerCase()}`} className="nav-item">
+        {["Home", "Closet", "Outfits"].map((link) => (
+          <Link key={link} to={`/${link.toLowerCase()}`} className="nav-item">
             {link}
-          </a>
+          </Link>
         ))}
       </nav>
+
+      {/* Dark Mode Toggle */}
+      <label className="dark-mode-toggle">
+        <input
+          type="checkbox"
+          checked={isDarkMode}
+          onChange={() => setIsDarkMode(!isDarkMode)}
+        />
+        Dark Mode
+      </label>
 
       {/* Profile Section (Right Side) */}
       <div className="profile">

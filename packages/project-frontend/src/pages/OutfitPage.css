@@ -1,3 +1,77 @@
+:root {
+  --primary-color: #007bff;
+  --primary-hover-color: #0056b3;
+  --text-color-light: white;
+  --text-color-dark: black;
+  --border-color: #ccc;
+  --background-overlay: rgba(0, 0, 0, 0.5);
+  --background-hover: rgba(0, 0, 0, 0.05);
+  --background-dark: rgba(0, 0, 0, 0.6);
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  --shadow-glow: rgba(0, 123, 255, 0.5);
+}
+
+/* Dark Mode Overrides */
+.dark-mode {
+  --primary-color: #3399ff;
+  --primary-hover-color: #1a73e8;
+  --text-color-light: #f1f1f1;
+  --text-color-dark: #121212;
+  --border-color: #555;
+  --background-overlay: rgba(255, 255, 255, 0.1);
+  --background-hover: rgba(255, 255, 255, 0.05);
+  --background-dark: rgba(255, 255, 255, 0.1);
+  --shadow-color: rgba(255, 255, 255, 0.2);
+  --shadow-glow: rgba(51, 153, 255, 0.5);
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  font-family: Arial, sans-serif;
+  background-color: white;
+  color: black;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.dark-mode body {
+  background-color: var(--background-dark);
+  color: var(--text-color-light);
+}
+
+/* Apply Dark Mode to Outfit Elements */
+.dark-mode .outfit-container{
+  background-color: var(--background-dark);
+  color: var(--text-color-light);
+}
+
+.dark-mode .modal-content {
+  background-color: rgb(53, 53, 53);
+  color: var(--text-color-light);
+}
+
+.dark-mode .grid-slot,
+.dark-mode .category-button {
+  color: var(--text-color-light);
+}
+
+.dark-mode .grid-slot {
+  border-color: var(--text-color-light);
+}
+
+.dark-mode .outfit-title {
+  color: var(--text-color-light);
+}
+
+.dark-mode .add-button {
+  background-color: var(--primary-color);
+}
+
+.dark-mode .add-button:hover {
+  background-color: var(--primary-hover-color);
+}
+
+/* Outfit Page Styling */
 .outfit-container {
   padding: 20px;
 }
@@ -26,24 +100,22 @@
 
 .outfit-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10em, 1fr)); /* Dynamic grid */
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
   padding: 20px;
+  width: 100%;
 }
 
 .grid-slot {
-  width: 100%;
-  aspect-ratio: 1;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  border: 2px dashed #ccc;
+  border: 2px dashed var(--border-color);
   transition: 0.2s;
   position: relative;
-}
-
-.grid-slot.filled {
-  border: none;
+  padding: 10px;
+  min-height: 250px;
 }
 
 .outfit-4x1-grid {
@@ -51,40 +123,34 @@
   grid-template-rows: repeat(4, auto);
   gap: 5px;
   justify-items: center;
-}
-
-.outfit-row {
-  display: flex;
-  justify-content: center;
-}
-
-.outfit-row img {
-  max-width: 100%;
-  height: auto;
+  width: 100%;
+  flex-grow: 1;
 }
 
 .outfit-title {
-  margin-top: 10px;
+  margin-top: auto;
   font-size: 1.1em;
   font-weight: bold;
   text-align: center;
+  padding-top: 10px;
+  color: var(--text-color-dark);
 }
 
 /* Hover Effects */
 .grid-slot.empty:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: var(--background-hover);
   cursor: pointer;
 }
 
 .grid-slot.filled:hover {
   transform: scale(1.05);
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 4px 6px var(--shadow-color);
 }
 
 /* Add Button */
 .add-button {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
   padding: 10px 20px;
   border-radius: 5px;
   cursor: pointer;
@@ -95,8 +161,8 @@
 }
 
 .add-button:hover {
-  background-color: #0056b3;
-  box-shadow: 0px 0px 10px rgba(0, 123, 255, 0.5);
+  background-color: var(--primary-hover-color);
+  box-shadow: 0px 0px 10px var(--shadow-glow);
 }
 
 /* Modal */
@@ -106,14 +172,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--background-overlay);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .modal-content {
-  background-color: white;
+  background-color: var(--text-color-light);
   padding: 20px;
   border-radius: 8px;
   width: 350px;
@@ -127,7 +193,7 @@ input[type="text"], select {
   width: 100%;
   padding: 8px;
   margin-top: 5px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
 }
 

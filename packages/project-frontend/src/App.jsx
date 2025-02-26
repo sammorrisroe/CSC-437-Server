@@ -1,13 +1,19 @@
-
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import ClosetPage from "./pages/ClosetPage";
 import OutfitPage from "./pages/OutfitPage";
-import Header from "./components/header";
+import Header from "./components/Header";
+import HomePage from "./pages/HomePage";
 
 function App() {
   return (
-    <div>
-      
-      <OutfitPage />
-    </div>
+    <Router>
+      <Header />
+      <Routes>
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/closet" element={<ClosetPage />} />
+        <Route path="/outfits" element={<OutfitPage />} />
+      </Routes>
+    </Router>
   );
 }
 
