@@ -46,3 +46,8 @@ Hit CTRL-C to stop the server
 [Wed Feb 26 2025 10:11:59 GMT-0800 (Pacific Standard Time)]  "GET /tokens.css" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
 [Wed Feb 26 2025 10:11:59 GMT-0800 (Pacific Standard Time)]  "GET /favicon.ico" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
 [Wed Feb 26 2025 10:11:59 GMT-0800 (Pacific Standard Time)]  "GET /favicon.ico" Error (404): "Not found"
+[Sat Mar 01 2025 19:49:49 GMT-0800 (Pacific Standard Time)]  "GET /todos" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+[Sat Mar 01 2025 19:49:49 GMT-0800 (Pacific Standard Time)]  "GET /todos/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+[Sat Mar 01 2025 19:49:49 GMT-0800 (Pacific Standard Time)]  "GET /todos/assets/index-B9JtynER.js" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+[Sat Mar 01 2025 19:49:49 GMT-0800 (Pacific Standard Time)]  "GET /todos/assets/index-CHzewLqz.css" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+[Sat Mar 01 2025 19:49:49 GMT-0800 (Pacific Standard Time)]  "GET /todos/vite.svg" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
