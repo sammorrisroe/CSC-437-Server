@@ -1,50 +1,13 @@
 import React, { useState } from "react";
 import Spinner from "./Spinner";
-
-const MDN_URL = "https://mdn.github.io/learning-area/javascript/apis/fetching-data/can-store/products.json";
-
-/**
- * Creates and returns a new promise that resolves after a specified number of milliseconds.
- *
- * @param {number} ms the number of milliseconds to delay
- * @returns {Promise<undefined>} a promise that resolves with the value of `undefined` after the specified delay
- */
-function delayMs(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+import { useGroceryFetch } from "./useGroceryFetch";
 
 export function GroceryPanel({ onAddTodo }) {
-    const [groceryData, setGroceryData] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    async function fetchData(url) {
-        setIsLoading(true);
-        setError(null);
-        setGroceryData([]);
-
-        try {
-            await delayMs(2000);
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Failed to fetch data");
-
-            const data = await response.json();
-            setGroceryData(data);
-        } catch (err) {
-            setError("Error fetching grocery data.");
-        } finally {
-            setIsLoading(false);
-        }
-    }
+    const [source, setSource] = useState("MDN");
+    const { groceryData, isLoading, error } = useGroceryFetch(source);
 
     function handleDropdownChange(e) {
-        const url = e.target.value;
-        setGroceryData([]);
-        setError(null);
-    
-        if (url) {
-            fetchData(url);
-        }
+        setSource(e.target.value);
     }
 
     function handleAddTodoClicked(item) {
@@ -59,12 +22,14 @@ export function GroceryPanel({ onAddTodo }) {
                 Get prices from:
                 <select 
                     className="border border-gray-300 p-1 rounded-sm disabled:opacity-50"
-                    disabled={isLoading}
                     onChange={handleDropdownChange}
+                    value={source}
                 >
                     <option value="">(None selected)</option>
-                    <option value={MDN_URL}>MDN</option>
-                    <option value="invalid">Who knows?</option>
+                    <option value="MDN">MDN</option>
+                    <option value="Liquor store">Liquor store</option>
+                    <option value="Butcher">Butcher</option>
+                    <option value="whoknows">Who knows?</option>
                 </select>
                 {isLoading && <Spinner className="text-gray-500" />}
                 {error && <span className="text-red-500">{error}</span>}
