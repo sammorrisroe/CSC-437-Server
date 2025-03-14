@@ -12,6 +12,7 @@ interface UserDocument {
 interface ImageDocument {
     _id: string;
     url: string;
+    name:string;
     title: string;
     description?: string;
     author: string; // Initially just a user ID
@@ -29,7 +30,7 @@ export class ImageProvider {
             // Perform the update operation
             const result: UpdateResult = await imagesCollection.updateOne(
                 { _id: imageId },
-                { $set: { title: newName } }
+                { $set: { name: newName } }
             );
 
             // Return the matched count (number of documents that were matched by the query)
