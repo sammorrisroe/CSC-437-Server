@@ -11,7 +11,7 @@ export function ImageDetails() {
         return <>Loading...</>;
     }
     
-    const imageData = fetchedImages[0];
+    const imageData = fetchedImages.find(img => img._id === imageId);
     if (!imageData) {
         return <><h2>Image not found</h2></>;
     }
