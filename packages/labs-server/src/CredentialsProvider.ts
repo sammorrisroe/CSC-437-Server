@@ -41,14 +41,7 @@ export class CredentialsProvider {
             return false; // User not found
         }
     
-        const { password: storedPassword } = userRecord;
-        const storedSalt = storedPassword.substring(0, 29);
-        const storedHashedPassword = storedPassword.substring(29);
-    
-        console.log("Stored Password:", storedPassword);
-        console.log("Stored Salt:", storedSalt);
-        console.log("Stored Hash:", storedHashedPassword);
-    
-        return bcrypt.compare(plaintextPassword, storedSalt + storedHashedPassword);
+        // bcrypt.compare will handle the salt comparison internally
+        return bcrypt.compare(plaintextPassword, userRecord.password);
     }
 }
