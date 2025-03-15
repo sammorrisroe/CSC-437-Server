@@ -1,11 +1,12 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import { MongoClient } from "mongodb";
-import dotenv from "dotenv";
-import path from "path";
-import { registerImageRoutes } from "./routes/images"; 
+import { registerImageRoutes } from "./routes/images";
+import { registerAuthRoutes, verifyAuthToken } from "./routes/auth";
 import { ImageProvider } from "./ImageProvider";
+import { CredentialsProvider } from "./CredentialsProvider"; // Added import
 
-dotenv.config();
 const PORT = process.env.PORT || 3000;
 const staticDir = process.env.STATIC_DIR || "public";
 
@@ -15,7 +16,8 @@ async function setUpServer() {
 
     try {
         const mongoClient = await MongoClient.connect(connectionString);
-        const imageProvider = new ImageProvider(mongoClient); // ✅ Create instance here
+        const imageProvider = new ImageProvider(mongoClient);
+        const credentialsProvider = new CredentialsProvider(mongoClient); // Create credentials provider
 
         const app = express();
         app.use(express.static(staticDir));
@@ -25,7 +27,15 @@ async function setUpServer() {
             res.send("Hello, World");
         });
 
-        registerImageRoutes(app, imageProvider); // ✅ Pass instance
+        // Register auth routes FIRST (unprotected)
+        registerAuthRoutes(app, credentialsProvider);
+        
+        // Then protect all API routes with JWT authentication
+        // The correct way to use middleware with a path pattern
+        app.use("/api/*", verifyAuthToken as express.RequestHandler);
+        
+        // Register image routes (now protected)
+        registerImageRoutes(app, imageProvider);
 
         app.listen(PORT, () => {
             console.log(`Server running at http://localhost:${PORT}`);
@@ -34,6 +44,5 @@ async function setUpServer() {
         console.error("Error connecting to MongoDB:", error);
     }
 }
-
 
 setUpServer();
