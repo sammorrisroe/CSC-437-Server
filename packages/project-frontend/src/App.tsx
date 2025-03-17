@@ -91,7 +91,7 @@ const App: React.FC = () => {
         {/* Other protected routes */}
         <Route path="/closet" element={
           <ProtectedRoute authToken={authToken}>
-            <ClosetPage />
+            <ClosetPage authToken={authToken} />
           </ProtectedRoute>
         } />
         

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./ClosetPage.css";
 
 const GRID_SIZE = 20;
@@ -8,6 +8,7 @@ type ClothingType = "shirts" | "pants" | "jackets" | "hats" | "shoes";
 type CategoryType = "All" | "Favorites" | "Shirts" | "Pants" | "Jackets" | "Hats" | "Shoes";
 
 interface ClothingItem {
+  _id?: string;
   title: string;
   type: ClothingType;
   isFavorite: boolean;
@@ -15,11 +16,17 @@ interface ClothingItem {
   imageUrl: string | null;
 }
 
-const ClosetPage: React.FC = () => {
+interface ClosetPageProps {
+  authToken: string | null;
+}
+
+const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
   const [clothes, setClothes] = useState<ClothingItem[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>("All");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [newClothing, setNewClothing] = useState<ClothingItem>({
     title: "",
@@ -29,10 +36,50 @@ const ClosetPage: React.FC = () => {
     imageUrl: null,
   });
 
+  // Load closet items from the server
+  useEffect(() => {
+    const fetchClosetItems = async () => {
+      if (!authToken) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const response = await fetch('/api/closet', {
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch items: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setClothes(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load your closet items');
+        console.error('Error fetching closet items:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClosetItems();
+  }, [authToken]);
+
   const handleAddClothes = (): void => {
     setEditIndex(null);
     setShowModal(true);
-    setNewClothing({ title: "", type: "shirts", isFavorite: false, description: "", imageUrl: null });
+    setNewClothing({ 
+      title: "", 
+      type: "shirts", 
+      isFavorite: false, 
+      description: "", 
+      imageUrl: null 
+    });
   };
 
   const handleEditClothes = (index: number): void => {
@@ -45,7 +92,9 @@ const ClosetPage: React.FC = () => {
     setSelectedCategory(category);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ): void => {
     setNewClothing({ ...newClothing, [e.target.name]: e.target.value });
   };
 
@@ -56,31 +105,130 @@ const ClosetPage: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = e.target.files;
     if (files && files[0]) {
-      setNewClothing({ ...newClothing, imageUrl: URL.createObjectURL(files[0]) });
+      // Just for preview - actual upload happens when saving
+      setNewClothing({ 
+        ...newClothing, 
+        imageUrl: URL.createObjectURL(files[0]) 
+      });
     }
   };
 
-  const handleSaveClothing = (): void => {
-    if (!newClothing.imageUrl || !newClothing.title) return;
-
-    if (editIndex !== null) {
-      const updatedClothes = [...clothes];
-      updatedClothes[editIndex] = newClothing;
-      setClothes(updatedClothes);
-    } else {
-      setClothes([...clothes, newClothing]);
+  const handleSaveClothing = async (): Promise<void> => {
+    if (!authToken) {
+      setError("You must be logged in to save items");
+      return;
     }
 
-    setShowModal(false);
-    setNewClothing({ title: "", type: "shirts", isFavorite: false, description: "", imageUrl: null });
+    if (!newClothing.title) {
+      setError("Title is required");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Create a FormData object to send the file and other data
+      const formData = new FormData();
+      formData.append("title", newClothing.title);
+      formData.append("type", newClothing.type);
+      formData.append("isFavorite", String(newClothing.isFavorite));
+      formData.append("description", newClothing.description || "");
+      
+      // Get the file from the input element (if it's a new file upload)
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      
+      let isUpdate = false;
+      let itemId: string | undefined;
+      
+      if (editIndex !== null) {
+        // We're updating an existing item
+        isUpdate = true;
+        itemId = clothes[editIndex]._id;
+        
+        // Only append a file if the user selected a new one
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+          formData.append("image", fileInput.files[0]);
+        }
+      } else {
+        // This is a new item, file is required
+        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+          formData.append("image", fileInput.files[0]);
+        } else {
+          setError("Image is required");
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Determine the URL and method based on whether we're updating or creating
+      const url = isUpdate ? `/api/closet/${itemId}` : '/api/closet';
+      const method = isUpdate ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+          // Don't set Content-Type with FormData, let the browser set it with the boundary
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save: ${response.statusText}`);
+      }
+
+      const savedItem = await response.json();
+      
+      if (isUpdate) {
+        // Replace the updated item in the array
+        setClothes(clothes.map((item, idx) => 
+          idx === editIndex ? savedItem : item
+        ));
+      } else {
+        // Add the new item to the array
+        setClothes([...clothes, savedItem]);
+      }
+
+      setShowModal(false);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save clothing item');
+      console.error('Error saving clothing item:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteClothing = (): void => {
-    if (editIndex !== null) {
-      const updatedClothes = clothes.filter((_, index) => index !== editIndex);
-      setClothes(updatedClothes);
+  const handleDeleteClothing = async (): Promise<void> => {
+    if (editIndex === null || !authToken) return;
+    
+    const itemId = clothes[editIndex]._id;
+    if (!itemId) return;
+    
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`/api/closet/${itemId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete: ${response.statusText}`);
+      }
+      
+      // Remove the item from the state
+      setClothes(clothes.filter((_, index) => index !== editIndex));
+      setShowModal(false);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete item');
+      console.error('Error deleting item:', err);
+    } finally {
+      setLoading(false);
     }
-    setShowModal(false);
   };
 
   const filteredClothes = clothes.filter((item) => {
@@ -91,6 +239,17 @@ const ClosetPage: React.FC = () => {
 
   return (
     <div className="closet-container">
+      {/* Error message display */}
+      {error && (
+        <div className="error-message">
+          {error}
+          <button onClick={() => setError(null)}>✕</button>
+        </div>
+      )}
+      
+      {/* Loading indicator */}
+      {loading && <div className="loading-spinner">Loading...</div>}
+      
       {/* Navigation Tabs */}
       <nav className="category-nav">
         {categories.map((category, index) => (
@@ -109,19 +268,28 @@ const ClosetPage: React.FC = () => {
         {[...filteredClothes, ...Array(GRID_SIZE - filteredClothes.length).fill(null)].map((item, index) => {
           if (item) {
             return (
-              <div key={index} className="grid-slot filled" onClick={() => handleEditClothes(clothes.indexOf(item))}>
-                <img src={item.imageUrl || ''} alt={item.title} className="clothing-image" />
+              <div 
+                key={item._id || index} 
+                className="grid-slot filled" 
+                onClick={() => handleEditClothes(clothes.indexOf(item))}
+              >
+                <img 
+                  src={item.imageUrl || ''} 
+                  alt={item.title} 
+                  className="clothing-image" 
+                />
                 <p className="clothing-title">{item.title}</p>
+                {item.isFavorite && <span className="favorite-star">★</span>}
               </div>
             );
           } else if (index === filteredClothes.length) {
             return (
-              <div key={index} className="grid-slot empty" onClick={handleAddClothes}>
+              <div key={`empty-${index}`} className="grid-slot empty" onClick={handleAddClothes}>
                 <div className="add-button">+ Add Clothes</div>
               </div>
             );
           } else {
-            return <div key={index} className="grid-slot empty"></div>;
+            return <div key={`empty-${index}`} className="grid-slot empty"></div>;
           }
         })}
       </div>
@@ -134,12 +302,22 @@ const ClosetPage: React.FC = () => {
 
             <div className="form-group">
               <label>Title</label>
-              <input type="text" name="title" value={newClothing.title} onChange={handleInputChange} required />
+              <input 
+                type="text" 
+                name="title" 
+                value={newClothing.title} 
+                onChange={handleInputChange} 
+                required 
+              />
             </div>
 
             <div className="form-group">
               <label>Category</label>
-              <select name="type" value={newClothing.type} onChange={handleInputChange}>
+              <select 
+                name="type" 
+                value={newClothing.type} 
+                onChange={handleInputChange}
+              >
                 <option value="shirts">Shirts</option>
                 <option value="pants">Pants</option>
                 <option value="jackets">Jackets</option>
@@ -149,12 +327,24 @@ const ClosetPage: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label>Favorite</label>
-              <input 
-                type="checkbox" 
-                checked={newClothing.isFavorite} 
-                onChange={handleFavoriteToggle} 
+              <label>Description</label>
+              <textarea
+                name="description"
+                value={newClothing.description || ""}
+                onChange={handleInputChange}
+                rows={3}
               />
+            </div>
+
+            <div className="form-group checkbox-group">
+              <label>
+                <input 
+                  type="checkbox" 
+                  checked={newClothing.isFavorite} 
+                  onChange={handleFavoriteToggle} 
+                />
+                Favorite
+              </label>
             </div>
 
             <div className="form-group">
@@ -166,15 +356,43 @@ const ClosetPage: React.FC = () => {
               />
             </div>
 
-            {newClothing.imageUrl && 
-              <img src={newClothing.imageUrl} alt="Preview" className="preview-image" />
-            }
+            {newClothing.imageUrl && (
+              <div className="preview-container">
+                <img 
+                  src={newClothing.imageUrl} 
+                  alt="Preview" 
+                  className="preview-image" 
+                />
+              </div>
+            )}
 
-            <button onClick={handleSaveClothing}>Save</button>
-            {editIndex !== null && 
-              <button onClick={handleDeleteClothing} className="delete-button">Delete</button>
-            }
-            <button onClick={() => setShowModal(false)}>Cancel</button>
+            <div className="modal-buttons">
+              <button 
+                onClick={handleSaveClothing} 
+                disabled={loading}
+                className="save-button"
+              >
+                {loading ? "Saving..." : "Save"}
+              </button>
+              
+              {editIndex !== null && (
+                <button 
+                  onClick={handleDeleteClothing} 
+                  disabled={loading}
+                  className="delete-button"
+                >
+                  {loading ? "Deleting..." : "Delete"}
+                </button>
+              )}
+              
+              <button 
+                onClick={() => setShowModal(false)} 
+                disabled={loading}
+                className="cancel-button"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
