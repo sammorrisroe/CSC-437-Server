@@ -1,14 +1,15 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import UsernamePasswordForm from './UsernamePasswordForm';
 import { sendPostRequest } from './sendPostRequest';
 
 interface RegisterResponse {
   token: string;
+  username: string;
   // Add other properties returned from register endpoint as needed
 }
 
-interface FormData {
+interface AuthFormData {
   username: string;
   password: string;
 }
@@ -19,13 +20,13 @@ interface FormResult {
 }
 
 interface RegisterPageProps {
-  onLoginSuccess: (token: string) => void;
+  onLoginSuccess: (token: string, username: string) => void;
 }
 
 const RegisterPage: React.FC<RegisterPageProps> = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
 
-  const handleRegistration = async (formData: FormData): Promise<FormResult> => {
+  const handleRegistration = async (formData: AuthFormData): Promise<FormResult> => {
     try {
       // Send registration request to backend
       const response = await sendPostRequest<RegisterResponse>('/auth/register', formData);
@@ -34,7 +35,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onLoginSuccess }) => {
       
       // Handle auto-login after registration
       if (response && response.token) {
-        onLoginSuccess(response.token);
+        onLoginSuccess(response.token, response.username || formData.username);
         
         // Redirect to homepage
         navigate('/');

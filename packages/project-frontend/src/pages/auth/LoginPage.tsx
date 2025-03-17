@@ -1,14 +1,15 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import UsernamePasswordForm from './UsernamePasswordForm';
 import { sendPostRequest } from './sendPostRequest';
 
 interface LoginResponse {
   token: string;
+  username: string;
   // Add other properties returned from login endpoint as needed
 }
 
-interface FormData {
+interface AuthFormData {
   username: string;
   password: string;
 }
@@ -19,13 +20,13 @@ interface FormResult {
 }
 
 interface LoginPageProps {
-  onLoginSuccess: (token: string) => void;
+  onLoginSuccess: (token: string, username: string) => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
 
-  const handleLogin = async (formData: FormData): Promise<FormResult> => {
+  const handleLogin = async (formData: AuthFormData): Promise<FormResult> => {
     try {
       // Send login request to backend
       const response = await sendPostRequest<LoginResponse>('/auth/login', formData);
@@ -34,7 +35,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       
       // Call the callback to pass auth token to parent
       if (response && response.token) {
-        onLoginSuccess(response.token);
+        onLoginSuccess(response.token, response.username || formData.username);
         
         // Redirect to homepage
         navigate('/');

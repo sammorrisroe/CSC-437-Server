@@ -1,25 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link } from "react-router";
 import "./Header.css";
 import logo from "../assets/logo.png";
 import defaultUser from "../assets/user.png";
 
-const Header: React.FC = () => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(
-    localStorage.getItem("darkMode") === "true"
-  );
+interface HeaderProps {
+  isLoggedIn: boolean;
+  username: string;
+  onLogout?: () => void; // Make optional since we're not using it directly in header anymore
+}
 
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark-mode");
-      document.body.classList.add("dark-mode"); // Apply to body
-    } else {
-      document.documentElement.classList.remove("dark-mode");
-      document.body.classList.remove("dark-mode"); // Remove from body
-    }
-    localStorage.setItem("darkMode", isDarkMode.toString());
-  }, [isDarkMode]);
+const Header: React.FC<HeaderProps> = ({ isLoggedIn, username }) => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
   return (
     <header className="header">
@@ -47,20 +39,20 @@ const Header: React.FC = () => {
         ))}
       </nav>
 
-      {/* Dark Mode Toggle */}
-      <label className="dark-mode-toggle">
-        <input
-          type="checkbox"
-          checked={isDarkMode}
-          onChange={() => setIsDarkMode(!isDarkMode)}
-        />
-        Dark Mode
-      </label>
-
       {/* Profile Section (Right Side) */}
       <div className="profile">
-        <img src={defaultUser} alt="User" className="profile-img" />
-        <span className="username">SammyBoBammy</span>
+        {isLoggedIn ? (
+          // When logged in, show profile image and username as a link to profile page
+          <Link to="/profile" className="profile-link">
+            <img src={defaultUser} alt="User" className="profile-img" />
+            <span className="username">{username}</span>
+          </Link>
+        ) : (
+          // When not logged in, show login link
+          <Link to="/login" className="login-link">
+            Login
+          </Link>
+        )}
       </div>
     </header>
   );

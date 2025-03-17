@@ -143,3 +143,40 @@ body {
     padding: 0 12px;
   }
 }
+/* Add these styles to your existing Header.css file */
+
+.profile-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: var(--text-color-light);
+  transition: transform 0.2s;
+}
+
+.dark-mode .profile-link {
+  color: var(--text-color-light);
+}
+
+.profile-link:hover {
+  transform: translateY(-2px);
+}
+
+.login-link {
+  text-decoration: none;
+  color: var(--primary-color);
+  font-weight: 500;
+  padding: 8px 15px;
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.login-link:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* Remove the dark mode toggle from header since it's moved to profile page */
+.dark-mode-toggle {
+  display: none;
+}

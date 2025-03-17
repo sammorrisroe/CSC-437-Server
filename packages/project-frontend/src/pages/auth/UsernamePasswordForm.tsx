@@ -1,5 +1,6 @@
 import React from 'react';
 import { useActionState } from "react";
+import './auth.css';
 
 // Rename to avoid conflict with the built-in FormData type
 interface AuthFormData {
@@ -7,7 +8,6 @@ interface AuthFormData {
   password: string;
 }
 
-// Use exact string literal types for the form result
 interface FormResult {
   type: "success" | "error";
   message: string;
@@ -18,7 +18,6 @@ interface UsernamePasswordFormProps {
 }
 
 const UsernamePasswordForm: React.FC<UsernamePasswordFormProps> = ({ onSubmit }) => {
-  // Define the exact function type that useActionState expects
   const [result, submitAction, isPending] = useActionState(
     async (_: FormResult | null, formData: FormData) => {
       const username = formData.get("username") as string;
@@ -53,7 +52,7 @@ const UsernamePasswordForm: React.FC<UsernamePasswordFormProps> = ({ onSubmit })
       {isPending && <p className="message loading">Submitting...</p>}
       {/* Use type assertion to bypass TypeScript's form action typing issues */}
       <form action={submitAction as any}>
-        <div>
+        <div className="form-group">
           <label htmlFor="username">Username</label>
           <input 
             type="text" 
@@ -62,7 +61,7 @@ const UsernamePasswordForm: React.FC<UsernamePasswordFormProps> = ({ onSubmit })
             disabled={isPending} 
           />
         </div>
-        <div>
+        <div className="form-group">
           <label htmlFor="password">Password</label>
           <input 
             type="password" 
@@ -71,7 +70,7 @@ const UsernamePasswordForm: React.FC<UsernamePasswordFormProps> = ({ onSubmit })
             disabled={isPending} 
           />
         </div>
-        <div>
+        <div className="form-group">
           <button type="submit" disabled={isPending}>
             {isPending ? "Submitting..." : "Submit"}
           </button>
