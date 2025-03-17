@@ -1,9 +1,12 @@
+// src/server.ts
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import { MongoClient } from "mongodb";
+import path from "path";
 import { registerAuthRoutes, verifyAuthToken } from "./routes/auth";
-import { CredentialsProvider } from "./CredentialsProvider"; // Added import
+import { registerClosetRoutes } from "./routes/closet"; // Import closet routes
+import { CredentialsProvider } from "./CredentialsProvider";
 
 const PORT = process.env.PORT || 3000;
 const staticDir = process.env.STATIC_DIR || "public";
@@ -14,7 +17,8 @@ async function setUpServer() {
 
     try {
         const mongoClient = await MongoClient.connect(connectionString);
-        const credentialsProvider = new CredentialsProvider(mongoClient); // Create credentials provider
+        const db = mongoClient.db();
+        const credentialsProvider = new CredentialsProvider(mongoClient);
 
         const app = express();
         app.use(express.static(staticDir));
@@ -24,14 +28,14 @@ async function setUpServer() {
             res.send("Hello, World");
         });
 
-        // Register auth routes FIRST (unprotected)
+        // Register auth routes (unprotected)
         registerAuthRoutes(app, credentialsProvider);
         
-        // Then protect all API routes with JWT authentication
-        // The correct way to use middleware with a path pattern
-        app.use("/api/*", verifyAuthToken as express.RequestHandler);
+        // Set up JWT verification middleware for protected routes
+        app.use("/api/*", verifyAuthToken);
         
-  
+        // Register closet routes (protected)
+        registerClosetRoutes(app, db);
 
         app.listen(PORT, () => {
             console.log(`Server running at http://localhost:${PORT}`);

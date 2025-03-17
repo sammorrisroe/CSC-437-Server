@@ -111,7 +111,7 @@ export function registerAuthRoutes(app: Application, credentialsProvider: Creden
             if (isValid) {
                 // Generate JWT token if password is correct
                 const token = await generateAuthToken(username);
-                res.status(200).json({ token });
+                res.status(200).json({ token, username });
                 return;
             } else {
                 res.status(401).json({
