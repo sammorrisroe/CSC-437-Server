@@ -4,37 +4,51 @@ import Spinner from "./Spinner"; // Import your Spinner component
 
 const GRID_SIZE = 20;
 
-const hatOptions = [
+interface ClothingItem {
+  title: string;
+  imageUrl: string;
+}
+
+interface Outfit {
+  title: string;
+  hat: ClothingItem | null;
+  shirt: ClothingItem | null;
+  jacket: ClothingItem | null;
+  pants: ClothingItem | null;
+  shoes: ClothingItem | null;
+}
+
+const hatOptions: ClothingItem[] = [
   { title: "Baseball Cap", imageUrl: "/images/cap.jpg" },
   { title: "Fedora", imageUrl: "/images/fedora.jpg" },
   { title: "Running Cap", imageUrl: "/images/running_cap.jpg" },
 ];
 
-const shirtOptions = [
+const shirtOptions: ClothingItem[] = [
   { title: "T-shirt", imageUrl: "/images/tshirt.jpg" },
   { title: "Dress Shirt", imageUrl: "/images/dress_shirt.jpg" },
   { title: "Gym Shirt", imageUrl: "/images/gym_shirt.jpg" },
 ];
 
-const jacketOptions = [
+const jacketOptions: ClothingItem[] = [
   { title: "Denim Jacket", imageUrl: "/images/denim_jacket.jpg" },
   { title: "Blazer", imageUrl: "/images/blazer.jpg" },
 ];
 
-const pantsOptions = [
+const pantsOptions: ClothingItem[] = [
   { title: "Jeans", imageUrl: "/images/jeans.jpg" },
   { title: "Chinos", imageUrl: "/images/chinos.jpg" },
   { title: "Track Pants", imageUrl: "/images/track_pants.jpg" },
 ];
 
-const shoesOptions = [
+const shoesOptions: ClothingItem[] = [
   { title: "Sneakers", imageUrl: "/images/sneakers.jpg" },
   { title: "Loafers", imageUrl: "/images/loafers.jpg" },
   { title: "Running Shoes", imageUrl: "/images/running_shoes.jpg" },
 ];
 
 // Predefined outfit for "Casual Day"
-const casualDayOutfit = {
+const casualDayOutfit: Outfit = {
   title: "Casual Day",
   hat: hatOptions[0],
   shirt: shirtOptions[0],
@@ -43,14 +57,16 @@ const casualDayOutfit = {
   shoes: shoesOptions[0],
 };
 
-const OutfitPage = () => {
-  const [outfits, setOutfits] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editIndex, setEditIndex] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("All");
+type CategoryType = "All" | "Favorites";
 
-  const [newOutfit, setNewOutfit] = useState({
+const OutfitPage: React.FC = () => {
+  const [outfits, setOutfits] = useState<Outfit[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType>("All");
+
+  const [newOutfit, setNewOutfit] = useState<Outfit>({
     title: "",
     hat: null,
     shirt: null,
@@ -75,25 +91,31 @@ const OutfitPage = () => {
     return () => clearTimeout(fetchTimeout);
   }, []);
 
-  const handleAddOutfit = () => {
+  const handleAddOutfit = (): void => {
     setEditIndex(null);
     setShowModal(true);
     setNewOutfit({ title: "", hat: null, shirt: null, jacket: null, pants: null, shoes: null });
   };
 
-  const handleEditOutfit = (index) => {
+  const handleEditOutfit = (index: number): void => {
     setEditIndex(index);
     setNewOutfit(outfits[index]);
     setShowModal(true);
   };
 
-  const handleCategoryChange = (category) => {
+  const handleCategoryChange = (category: CategoryType): void => {
     setSelectedCategory(category);
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     const { name, value } = e.target;
-    let selectedItem = null;
+    
+    if (name === "title") {
+      setNewOutfit({ ...newOutfit, title: value });
+      return;
+    }
+    
+    let selectedItem: ClothingItem | null = null;
 
     switch (name) {
       case "hat":
@@ -111,14 +133,12 @@ const OutfitPage = () => {
       case "shoes":
         selectedItem = shoesOptions.find((item) => item.title === value) || null;
         break;
-      default:
-        selectedItem = value;
     }
 
     setNewOutfit({ ...newOutfit, [name]: selectedItem });
   };
 
-  const handleSaveOutfit = () => {
+  const handleSaveOutfit = (): void => {
     if (!newOutfit.title || !newOutfit.shirt || !newOutfit.pants || !newOutfit.shoes) {
       alert("Please fill out all required fields (Title, Shirt, Pants, and Shoes).");
       return;
@@ -136,7 +156,7 @@ const OutfitPage = () => {
     setNewOutfit({ title: "", hat: null, shirt: null, jacket: null, pants: null, shoes: null });
   };
 
-  const handleDeleteOutfit = () => {
+  const handleDeleteOutfit = (): void => {
     if (editIndex !== null) {
       const updatedOutfits = outfits.filter((_, index) => index !== editIndex);
       setOutfits(updatedOutfits);
@@ -147,10 +167,16 @@ const OutfitPage = () => {
   return (
     <div className="outfit-container">
       <nav className="category-nav">
-        <button className={`category-button ${selectedCategory === "All" ? "active" : ""}`} onClick={() => handleCategoryChange("All")}>
+        <button 
+          className={`category-button ${selectedCategory === "All" ? "active" : ""}`} 
+          onClick={() => handleCategoryChange("All")}
+        >
           All
         </button>
-        <button className={`category-button ${selectedCategory === "Favorites" ? "active" : ""}`} onClick={() => handleCategoryChange("Favorites")}>
+        <button 
+          className={`category-button ${selectedCategory === "Favorites" ? "active" : ""}`} 
+          onClick={() => handleCategoryChange("Favorites")}
+        >
           Favorites
         </button>
       </nav>
@@ -204,10 +230,20 @@ const OutfitPage = () => {
               <input type="text" name="title" value={newOutfit.title} onChange={handleInputChange} required />
             </div>
 
-            {[{ name: "hat", options: hatOptions }, { name: "shirt", options: shirtOptions }, { name: "jacket", options: jacketOptions }, { name: "pants", options: pantsOptions }, { name: "shoes", options: shoesOptions }].map(({ name, options }) => (
+            {[
+              { name: "hat", options: hatOptions }, 
+              { name: "shirt", options: shirtOptions }, 
+              { name: "jacket", options: jacketOptions }, 
+              { name: "pants", options: pantsOptions }, 
+              { name: "shoes", options: shoesOptions }
+            ].map(({ name, options }) => (
               <div className="form-group" key={name}>
                 <label>{name.charAt(0).toUpperCase() + name.slice(1)}</label>
-                <select name={name} value={newOutfit[name]?.title || ""} onChange={handleInputChange}>
+                <select 
+                  name={name} 
+                  value={(newOutfit[name as keyof Outfit] as ClothingItem | null)?.title || ""} 
+                  onChange={handleInputChange}
+                >
                   <option value="">Select {name}</option>
                   {options.map((option) => (
                     <option key={option.title} value={option.title}>

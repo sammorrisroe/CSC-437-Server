@@ -1,12 +1,12 @@
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
 import "./Header.css";
 import logo from "../assets/logo.png";
 import defaultUser from "../assets/user.png";
 
-export default function Header() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(
+const Header: React.FC = () => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(
     localStorage.getItem("darkMode") === "true"
   );
 
@@ -18,13 +18,17 @@ export default function Header() {
       document.documentElement.classList.remove("dark-mode");
       document.body.classList.remove("dark-mode"); // Remove from body
     }
-    localStorage.setItem("darkMode", isDarkMode);
+    localStorage.setItem("darkMode", isDarkMode.toString());
   }, [isDarkMode]);
 
   return (
     <header className="header">
       {/* Mobile Menu Button (Left Side) */}
-      <button className="menu-btn" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
+      <button 
+        className="menu-btn" 
+        onClick={() => setIsOpen(!isOpen)} 
+        aria-label="Toggle menu"
+      >
         ☰
       </button>
 
@@ -60,4 +64,6 @@ export default function Header() {
       </div>
     </header>
   );
-}
+};
+
+export default Header;

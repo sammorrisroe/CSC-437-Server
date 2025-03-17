@@ -4,13 +4,24 @@ import "./ClosetPage.css";
 const GRID_SIZE = 20;
 const categories = ["All", "Favorites", "Shirts", "Pants", "Jackets", "Hats", "Shoes"];
 
-const ClosetPage = () => {
-  const [clothes, setClothes] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editIndex, setEditIndex] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("All");
+type ClothingType = "shirts" | "pants" | "jackets" | "hats" | "shoes";
+type CategoryType = "All" | "Favorites" | "Shirts" | "Pants" | "Jackets" | "Hats" | "Shoes";
 
-  const [newClothing, setNewClothing] = useState({
+interface ClothingItem {
+  title: string;
+  type: ClothingType;
+  isFavorite: boolean;
+  description: string;
+  imageUrl: string | null;
+}
+
+const ClosetPage: React.FC = () => {
+  const [clothes, setClothes] = useState<ClothingItem[]>([]);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType>("All");
+
+  const [newClothing, setNewClothing] = useState<ClothingItem>({
     title: "",
     type: "shirts",
     isFavorite: false,
@@ -18,38 +29,38 @@ const ClosetPage = () => {
     imageUrl: null,
   });
 
-  const handleAddClothes = () => {
+  const handleAddClothes = (): void => {
     setEditIndex(null);
     setShowModal(true);
     setNewClothing({ title: "", type: "shirts", isFavorite: false, description: "", imageUrl: null });
   };
 
-  const handleEditClothes = (index) => {
+  const handleEditClothes = (index: number): void => {
     setEditIndex(index);
     setNewClothing(clothes[index]);
     setShowModal(true);
   };
 
-  const handleCategoryChange = (category) => {
+  const handleCategoryChange = (category: CategoryType): void => {
     setSelectedCategory(category);
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     setNewClothing({ ...newClothing, [e.target.name]: e.target.value });
   };
 
-  const handleFavoriteToggle = () => {
+  const handleFavoriteToggle = (): void => {
     setNewClothing({ ...newClothing, isFavorite: !newClothing.isFavorite });
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setNewClothing({ ...newClothing, imageUrl: URL.createObjectURL(file) });
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      setNewClothing({ ...newClothing, imageUrl: URL.createObjectURL(files[0]) });
     }
   };
 
-  const handleSaveClothing = () => {
+  const handleSaveClothing = (): void => {
     if (!newClothing.imageUrl || !newClothing.title) return;
 
     if (editIndex !== null) {
@@ -64,7 +75,7 @@ const ClosetPage = () => {
     setNewClothing({ title: "", type: "shirts", isFavorite: false, description: "", imageUrl: null });
   };
 
-  const handleDeleteClothing = () => {
+  const handleDeleteClothing = (): void => {
     if (editIndex !== null) {
       const updatedClothes = clothes.filter((_, index) => index !== editIndex);
       setClothes(updatedClothes);
@@ -86,7 +97,7 @@ const ClosetPage = () => {
           <button
             key={index}
             className={`category-button ${selectedCategory === category ? "active" : ""}`}
-            onClick={() => handleCategoryChange(category)}
+            onClick={() => handleCategoryChange(category as CategoryType)}
           >
             {category}
           </button>
@@ -99,7 +110,7 @@ const ClosetPage = () => {
           if (item) {
             return (
               <div key={index} className="grid-slot filled" onClick={() => handleEditClothes(clothes.indexOf(item))}>
-                <img src={item.imageUrl} alt={item.title} className="clothing-image" />
+                <img src={item.imageUrl || ''} alt={item.title} className="clothing-image" />
                 <p className="clothing-title">{item.title}</p>
               </div>
             );
@@ -139,18 +150,30 @@ const ClosetPage = () => {
 
             <div className="form-group">
               <label>Favorite</label>
-              <input type="checkbox" checked={newClothing.isFavorite} onChange={handleFavoriteToggle} />
+              <input 
+                type="checkbox" 
+                checked={newClothing.isFavorite} 
+                onChange={handleFavoriteToggle} 
+              />
             </div>
 
             <div className="form-group">
               <label>Upload Image</label>
-              <input type="file" accept="image/*" onChange={handleImageUpload} />
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleImageUpload} 
+              />
             </div>
 
-            {newClothing.imageUrl && <img src={newClothing.imageUrl} alt="Preview" className="preview-image" />}
+            {newClothing.imageUrl && 
+              <img src={newClothing.imageUrl} alt="Preview" className="preview-image" />
+            }
 
             <button onClick={handleSaveClothing}>Save</button>
-            {editIndex !== null && <button onClick={handleDeleteClothing} className="delete-button">Delete</button>}
+            {editIndex !== null && 
+              <button onClick={handleDeleteClothing} className="delete-button">Delete</button>
+            }
             <button onClick={() => setShowModal(false)}>Cancel</button>
           </div>
         </div>
