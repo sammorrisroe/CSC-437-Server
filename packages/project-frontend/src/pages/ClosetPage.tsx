@@ -46,6 +46,8 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
       
       try {
         setLoading(true);
+        console.log("Fetching closet items with auth token:", authToken?.substring(0, 10) + "...");
+        
         const response = await fetch('/api/closet', {
           headers: {
             'Authorization': `Bearer ${authToken}`
@@ -57,6 +59,12 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
         }
         
         const data = await response.json();
+        console.log("Closet items received:", data);
+        console.log("Closet items with image URLs:", data.map((item: any) => ({
+          id: item._id,
+          imageUrl: item.imageUrl
+        })));
+        
         setClothes(data);
         setError(null);
       } catch (err) {
@@ -105,10 +113,17 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = e.target.files;
     if (files && files[0]) {
-      // Just for preview - actual upload happens when saving
+      const file = files[0];
+      console.log("Image selected for preview:", {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
+      
+      // Create a preview URL for display
       setNewClothing({ 
         ...newClothing, 
-        imageUrl: URL.createObjectURL(files[0]) 
+        imageUrl: URL.createObjectURL(file) 
       });
     }
   };
@@ -134,6 +149,9 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
       formData.append("isFavorite", String(newClothing.isFavorite));
       formData.append("description", newClothing.description || "");
       
+      // Log formData keys for debugging
+      console.log("FormData initial keys:", [...formData.keys()]);
+      
       // Get the file from the input element (if it's a new file upload)
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       
@@ -144,25 +162,45 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
         // We're updating an existing item
         isUpdate = true;
         itemId = clothes[editIndex]._id;
+        console.log(`Updating item: ${itemId}`);
         
         // Only append a file if the user selected a new one
         if (fileInput && fileInput.files && fileInput.files.length > 0) {
-          formData.append("image", fileInput.files[0]);
+          const file = fileInput.files[0];
+          console.log("Uploading new file for existing item:", {
+            name: file.name,
+            type: file.type,
+            size: file.size
+          });
+          formData.append("image", file);
+        } else {
+          console.log("No new file selected for update, keeping existing image");
         }
       } else {
         // This is a new item, file is required
         if (fileInput && fileInput.files && fileInput.files.length > 0) {
-          formData.append("image", fileInput.files[0]);
+          const file = fileInput.files[0];
+          console.log("Uploading file for new item:", {
+            name: file.name,
+            type: file.type,
+            size: file.size
+          });
+          formData.append("image", file);
         } else {
           setError("Image is required");
           setLoading(false);
           return;
         }
       }
+      
+      // Log the final form data
+      console.log("Final FormData keys:", [...formData.keys()]);
 
       // Determine the URL and method based on whether we're updating or creating
       const url = isUpdate ? `/api/closet/${itemId}` : '/api/closet';
       const method = isUpdate ? 'PUT' : 'POST';
+      
+      console.log(`Sending ${method} request to ${url}`);
       
       const response = await fetch(url, {
         method: method,
@@ -174,10 +212,13 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to save: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("Server error response:", errorText);
+        throw new Error(`Failed to save: ${response.statusText} (${errorText})`);
       }
 
       const savedItem = await response.json();
+      console.log("Saved item response:", savedItem);
       
       if (isUpdate) {
         // Replace the updated item in the array
@@ -207,6 +248,7 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
     
     try {
       setLoading(true);
+      console.log(`Deleting item: ${itemId}`);
       
       const response = await fetch(`/api/closet/${itemId}`, {
         method: 'DELETE',
@@ -274,7 +316,11 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
                 onClick={() => handleEditClothes(clothes.indexOf(item))}
               >
                 <img 
-                  src={item.imageUrl || ''} 
+                  src={item.imageUrl || ''}
+                  onError={(e) => {
+                    console.error(`Error loading image: ${item.imageUrl}`);
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Image+Error';
+                  }}
                   alt={item.title} 
                   className="clothing-image" 
                 />
@@ -353,6 +399,7 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
                 type="file" 
                 accept="image/*" 
                 onChange={handleImageUpload} 
+                name="image"
               />
             </div>
 
@@ -362,6 +409,10 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
                   src={newClothing.imageUrl} 
                   alt="Preview" 
                   className="preview-image" 
+                  onError={(e) => {
+                    console.error(`Error loading preview image`);
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Preview+Error';
+                  }}
                 />
               </div>
             )}
