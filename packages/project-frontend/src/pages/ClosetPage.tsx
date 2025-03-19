@@ -27,6 +27,7 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>("All");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [newClothing, setNewClothing] = useState<ClothingItem>({
     title: "",
@@ -60,12 +61,25 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
         
         const data = await response.json();
         console.log("Closet items received:", data);
-        console.log("Closet items with image URLs:", data.map((item: any) => ({
+        
+        // Process the retrieved items to ensure valid image URLs
+        const processedData = data.map((item: any) => {
+          if (item.imageUrl) {
+            // Make sure imageUrl is correctly formatted to point to the uploads directory
+            // If imageUrl doesn't start with a protocol or slash, add '/uploads/' prefix
+            if (!item.imageUrl.startsWith('http') && !item.imageUrl.startsWith('/')) {
+              item.imageUrl = `/uploads/${item.imageUrl}`;
+            }
+          }
+          return item;
+        });
+        
+        console.log("Processed closet items with fixed image URLs:", processedData.map((item: any) => ({
           id: item._id,
           imageUrl: item.imageUrl
         })));
         
-        setClothes(data);
+        setClothes(processedData);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load your closet items');
@@ -81,6 +95,7 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
   const handleAddClothes = (): void => {
     setEditIndex(null);
     setShowModal(true);
+    setSelectedFile(null);
     setNewClothing({ 
       title: "", 
       type: "shirts", 
@@ -93,6 +108,7 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
   const handleEditClothes = (index: number): void => {
     setEditIndex(index);
     setNewClothing(clothes[index]);
+    setSelectedFile(null);
     setShowModal(true);
   };
 
@@ -114,6 +130,7 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
     const files = e.target.files;
     if (files && files[0]) {
       const file = files[0];
+      setSelectedFile(file);
       console.log("Image selected for preview:", {
         name: file.name,
         type: file.type,
@@ -152,9 +169,6 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
       // Log formData keys for debugging
       console.log("FormData initial keys:", [...formData.keys()]);
       
-      // Get the file from the input element (if it's a new file upload)
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      
       let isUpdate = false;
       let itemId: string | undefined;
       
@@ -165,27 +179,25 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
         console.log(`Updating item: ${itemId}`);
         
         // Only append a file if the user selected a new one
-        if (fileInput && fileInput.files && fileInput.files.length > 0) {
-          const file = fileInput.files[0];
+        if (selectedFile) {
           console.log("Uploading new file for existing item:", {
-            name: file.name,
-            type: file.type,
-            size: file.size
+            name: selectedFile.name,
+            type: selectedFile.type,
+            size: selectedFile.size
           });
-          formData.append("image", file);
+          formData.append("image", selectedFile);
         } else {
           console.log("No new file selected for update, keeping existing image");
         }
       } else {
         // This is a new item, file is required
-        if (fileInput && fileInput.files && fileInput.files.length > 0) {
-          const file = fileInput.files[0];
+        if (selectedFile) {
           console.log("Uploading file for new item:", {
-            name: file.name,
-            type: file.type,
-            size: file.size
+            name: selectedFile.name,
+            type: selectedFile.type,
+            size: selectedFile.size
           });
-          formData.append("image", file);
+          formData.append("image", selectedFile);
         } else {
           setError("Image is required");
           setLoading(false);
@@ -220,6 +232,11 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
       const savedItem = await response.json();
       console.log("Saved item response:", savedItem);
       
+      // Process the saved item to ensure the imageUrl is correctly formatted
+      if (savedItem.imageUrl && !savedItem.imageUrl.startsWith('http') && !savedItem.imageUrl.startsWith('/')) {
+        savedItem.imageUrl = `/uploads/${savedItem.imageUrl}`;
+      }
+      
       if (isUpdate) {
         // Replace the updated item in the array
         setClothes(clothes.map((item, idx) => 
@@ -232,6 +249,7 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
 
       setShowModal(false);
       setError(null);
+      setSelectedFile(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save clothing item');
       console.error('Error saving clothing item:', err);
@@ -279,6 +297,19 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
     return item.type.toLowerCase() === selectedCategory.toLowerCase();
   });
 
+  // Function to get proper image URL for display
+  const getImageUrl = (item: ClothingItem): string => {
+    if (!item.imageUrl) return 'https://via.placeholder.com/150?text=No+Image';
+    
+    // If it's already a complete URL or starts with /, return it directly
+    if (item.imageUrl.startsWith('http') || item.imageUrl.startsWith('/')) {
+      return item.imageUrl;
+    }
+    
+    // Otherwise, prepend the uploads path
+    return `/uploads/${item.imageUrl}`;
+  };
+
   return (
     <div className="closet-container">
       {/* Error message display */}
@@ -316,7 +347,7 @@ const ClosetPage: React.FC<ClosetPageProps> = ({ authToken }) => {
                 onClick={() => handleEditClothes(clothes.indexOf(item))}
               >
                 <img 
-                  src={item.imageUrl || ''}
+                  src={getImageUrl(item)}
                   onError={(e) => {
                     console.error(`Error loading image: ${item.imageUrl}`);
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Image+Error';

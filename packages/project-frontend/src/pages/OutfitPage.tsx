@@ -51,6 +51,51 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
     isFavorite: false
   });
 
+  // Function to ensure image URLs are properly formatted
+  const getImageUrl = (imageUrl: string | null): string => {
+    if (!imageUrl) return 'https://via.placeholder.com/150?text=No+Image';
+    
+    // If it's already a complete URL or starts with /, return it directly
+    if (imageUrl.startsWith('http') || imageUrl.startsWith('/')) {
+      return imageUrl;
+    }
+    
+    // Otherwise, prepend the uploads path
+    return `/uploads/${imageUrl}`;
+  };
+
+  // Process closet items to ensure valid image URLs
+  const processImageUrls = (items: any[]): any[] => {
+    return items.map(item => {
+      if (item && item.imageUrl) {
+        // Ensure imageUrl is correctly formatted
+        if (!item.imageUrl.startsWith('http') && !item.imageUrl.startsWith('/')) {
+          item.imageUrl = `/uploads/${item.imageUrl}`;
+        }
+      }
+      return item;
+    });
+  };
+
+  // Process outfit data to ensure all nested item imageUrls are correctly formatted
+  const processOutfitImageUrls = (outfitData: any[]): any[] => {
+    return outfitData.map(outfit => {
+      const processedOutfit = { ...outfit };
+      
+      // Process each clothing item in the outfit
+      ['hat', 'shirt', 'jacket', 'pants', 'shoes'].forEach(itemType => {
+        if (processedOutfit[itemType] && processedOutfit[itemType].imageUrl) {
+          if (!processedOutfit[itemType].imageUrl.startsWith('http') && 
+              !processedOutfit[itemType].imageUrl.startsWith('/')) {
+            processedOutfit[itemType].imageUrl = `/uploads/${processedOutfit[itemType].imageUrl}`;
+          }
+        }
+      });
+      
+      return processedOutfit;
+    });
+  };
+
   // Fetch closet items from the server
   useEffect(() => {
     const fetchClosetItems = async () => {
@@ -74,26 +119,31 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
         
         const data = await response.json();
         console.log('Closet items loaded:', data.length);
-        if (data.length > 0) {
+        
+        // Process the items to ensure image URLs are correct
+        const processedData = processImageUrls(data);
+        
+        if (processedData.length > 0) {
           console.log('Sample closet item:', {
-            _id: data[0]._id,
-            title: data[0].title,
-            type: data[0].type,
-            imageUrl: data[0].imageUrl
+            _id: processedData[0]._id,
+            title: processedData[0].title,
+            type: processedData[0].type,
+            imageUrl: processedData[0].imageUrl
           });
           
           // Log all types for debugging
-          const types = data.map((item: ClothingItem) => item.type);
+          const types = processedData.map((item: ClothingItem) => item.type);
           const uniqueTypes = [...new Set(types)];
           console.log('Unique types in closet:', uniqueTypes);
           
           // Count items by type
           uniqueTypes.forEach(type => {
-            const count = data.filter((item: ClothingItem) => item.type === type).length;
+            const count = processedData.filter((item: ClothingItem) => item.type === type).length;
             console.log(`  Type "${type}": ${count} items`);
           });
         }
-        setClosetItems(data);
+        
+        setClosetItems(processedData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load your closet items');
         console.error('Error fetching closet items:', err);
@@ -130,21 +180,31 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
         const data = await response.json();
         console.log(`Loaded ${data.length} outfits from server`);
         
-        if (data.length > 0) {
+        // Process outfit data to ensure all image URLs are correct
+        const processedOutfits = processOutfitImageUrls(data);
+        
+        if (processedOutfits.length > 0) {
           console.log('First outfit example:', {
-            id: data[0]._id,
-            title: data[0].title,
+            id: processedOutfits[0]._id,
+            title: processedOutfits[0].title,
             items: {
-              hat: data[0].hat?.title || 'none',
-              shirt: data[0].shirt?.title || 'none',
-              jacket: data[0].jacket?.title || 'none',
-              pants: data[0].pants?.title || 'none',
-              shoes: data[0].shoes?.title || 'none'
+              hat: processedOutfits[0].hat?.title || 'none',
+              shirt: processedOutfits[0].shirt?.title || 'none',
+              jacket: processedOutfits[0].jacket?.title || 'none',
+              pants: processedOutfits[0].pants?.title || 'none',
+              shoes: processedOutfits[0].shoes?.title || 'none'
+            },
+            imageUrls: {
+              hat: processedOutfits[0].hat?.imageUrl || 'none',
+              shirt: processedOutfits[0].shirt?.imageUrl || 'none', 
+              jacket: processedOutfits[0].jacket?.imageUrl || 'none',
+              pants: processedOutfits[0].pants?.imageUrl || 'none',
+              shoes: processedOutfits[0].shoes?.imageUrl || 'none'
             }
           });
         }
         
-        setOutfits(data);
+        setOutfits(processedOutfits);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load your outfits');
         console.error('Error fetching outfits:', err);
@@ -302,15 +362,26 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
       const savedOutfit = await response.json();
       console.log('Outfit saved successfully:', savedOutfit);
       
+      // Process the saved outfit to ensure proper image URLs
+      const processedOutfit = { ...savedOutfit };
+      ['hat', 'shirt', 'jacket', 'pants', 'shoes'].forEach(itemType => {
+        if (processedOutfit[itemType] && processedOutfit[itemType].imageUrl) {
+          if (!processedOutfit[itemType].imageUrl.startsWith('http') && 
+              !processedOutfit[itemType].imageUrl.startsWith('/')) {
+            processedOutfit[itemType].imageUrl = `/uploads/${processedOutfit[itemType].imageUrl}`;
+          }
+        }
+      });
+      
       // Update the local state with the saved outfit
       if (editIndex !== null) {
         // Update existing outfit
         const updatedOutfits = [...outfits];
-        updatedOutfits[editIndex] = savedOutfit;
+        updatedOutfits[editIndex] = processedOutfit;
         setOutfits(updatedOutfits);
       } else {
         // Add new outfit
-        setOutfits([...outfits, savedOutfit]);
+        setOutfits([...outfits, processedOutfit]);
       }
 
       setShowModal(false);
@@ -454,9 +525,10 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
                     <div className="outfit-row hat">
                       {outfit.hat && (
                         <img 
-                          src={outfit.hat.imageUrl || ''} 
+                          src={getImageUrl(outfit.hat.imageUrl)} 
                           alt={outfit.hat.title}
                           onError={(e) => {
+                            console.error(`Error loading hat image: ${outfit.hat?.imageUrl}`);
                             (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                           }}
                         />
@@ -465,18 +537,20 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
                     <div className="outfit-row shirt-jacket">
                       {outfit.shirt && (
                         <img 
-                          src={outfit.shirt.imageUrl || ''} 
+                          src={getImageUrl(outfit.shirt.imageUrl)} 
                           alt={outfit.shirt.title}
                           onError={(e) => {
+                            console.error(`Error loading shirt image: ${outfit.shirt?.imageUrl}`);
                             (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                           }}
                         />
                       )}
                       {outfit.jacket && (
                         <img 
-                          src={outfit.jacket.imageUrl || ''} 
+                          src={getImageUrl(outfit.jacket.imageUrl)} 
                           alt={outfit.jacket.title}
                           onError={(e) => {
+                            console.error(`Error loading jacket image: ${outfit.jacket?.imageUrl}`);
                             (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                           }}
                         />
@@ -485,9 +559,10 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
                     <div className="outfit-row pants">
                       {outfit.pants && (
                         <img 
-                          src={outfit.pants.imageUrl || ''} 
+                          src={getImageUrl(outfit.pants.imageUrl)} 
                           alt={outfit.pants.title}
                           onError={(e) => {
+                            console.error(`Error loading pants image: ${outfit.pants?.imageUrl}`);
                             (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                           }}
                         />
@@ -496,9 +571,10 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
                     <div className="outfit-row shoes">
                       {outfit.shoes && (
                         <img 
-                          src={outfit.shoes.imageUrl || ''} 
+                          src={getImageUrl(outfit.shoes.imageUrl)} 
                           alt={outfit.shoes.title}
                           onError={(e) => {
+                            console.error(`Error loading shoes image: ${outfit.shoes?.imageUrl}`);
                             (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                           }}
                         />
@@ -626,9 +702,10 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
               <p>Hat</p>
               {newOutfit.hat ? (
                 <img 
-                  src={newOutfit.hat.imageUrl || ''} 
+                  src={getImageUrl(newOutfit.hat.imageUrl)}
                   alt={newOutfit.hat.title}
                   onError={(e) => {
+                    console.error(`Error loading preview hat image: ${newOutfit.hat?.imageUrl}`);
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                   }}
                 />
@@ -641,9 +718,10 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
               <p>Shirt</p>
               {newOutfit.shirt ? (
                 <img 
-                  src={newOutfit.shirt.imageUrl || ''} 
+                  src={getImageUrl(newOutfit.shirt.imageUrl)}
                   alt={newOutfit.shirt.title}
                   onError={(e) => {
+                    console.error(`Error loading preview shirt image: ${newOutfit.shirt?.imageUrl}`);
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                   }}
                 />
@@ -656,9 +734,10 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
               <p>Jacket</p>
               {newOutfit.jacket ? (
                 <img 
-                  src={newOutfit.jacket.imageUrl || ''} 
+                  src={getImageUrl(newOutfit.jacket.imageUrl)}
                   alt={newOutfit.jacket.title}
                   onError={(e) => {
+                    console.error(`Error loading preview jacket image: ${newOutfit.jacket?.imageUrl}`);
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                   }}
                 />
@@ -671,9 +750,10 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
               <p>Pants</p>
               {newOutfit.pants ? (
                 <img 
-                  src={newOutfit.pants.imageUrl || ''} 
+                  src={getImageUrl(newOutfit.pants.imageUrl)}
                   alt={newOutfit.pants.title}
                   onError={(e) => {
+                    console.error(`Error loading preview pants image: ${newOutfit.pants?.imageUrl}`);
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                   }}
                 />
@@ -686,9 +766,10 @@ const OutfitPage: React.FC<OutfitPageProps> = ({ authToken }) => {
               <p>Shoes</p>
               {newOutfit.shoes ? (
                 <img 
-                  src={newOutfit.shoes.imageUrl || ''} 
+                  src={getImageUrl(newOutfit.shoes.imageUrl)}
                   alt={newOutfit.shoes.title}
                   onError={(e) => {
+                    console.error(`Error loading preview shoes image: ${newOutfit.shoes?.imageUrl}`);
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
                   }}
                 />
