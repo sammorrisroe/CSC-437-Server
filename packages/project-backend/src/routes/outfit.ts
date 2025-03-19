@@ -2,6 +2,7 @@
 import express, { Response, Application, NextFunction } from "express";
 import { Request as ExpressRequest } from "express";
 import { ObjectId } from "mongodb";
+import path from "path";
 
 // Extended Request interface with user property
 interface Request extends ExpressRequest {
@@ -43,6 +44,29 @@ export function registerOutfitRoutes(app: Application, db: any) {
   const closetCollectionName = process.env.CLOSET_COLLECTION_NAME || "closet_items";
   const closetCollection = db.collection(closetCollectionName);
   
+  // Helper function to process image URLs in outfit items
+  const processItemImageUrls = (item: OutfitItemRef | null): OutfitItemRef | null => {
+    if (!item) return null;
+    
+    return {
+      ...item,
+      // Store just the filename, not the full path
+      imageUrl: item.imageUrl ? path.basename(item.imageUrl.replace(/^\/uploads\//, '')) : item.imageUrl
+    };
+  };
+  
+  // Helper function to normalize outfit data for storage
+  const normalizeOutfitForStorage = (outfit: any): any => {
+    return {
+      ...outfit,
+      hat: processItemImageUrls(outfit.hat),
+      shirt: processItemImageUrls(outfit.shirt),
+      jacket: processItemImageUrls(outfit.jacket),
+      pants: processItemImageUrls(outfit.pants),
+      shoes: processItemImageUrls(outfit.shoes)
+    };
+  };
+  
   // Get all outfits for the authenticated user
   app.get("/api/outfits", async (req: Request, res: Response) => {
     try {
@@ -82,8 +106,19 @@ export function registerOutfitRoutes(app: Application, db: any) {
         return;
       }
 
+      // Normalize the outfit data - ensure images are stored correctly
+      const normalizedData = normalizeOutfitForStorage({
+        title, hat, shirt, jacket, pants, shoes, isFavorite
+      });
+
       // Verify that all referenced closet items exist and belong to the user
-      const itemRefs = [hat, shirt, jacket, pants, shoes].filter((item: any): item is OutfitItemRef => !!item && !!item._id);
+      const itemRefs = [
+        normalizedData.hat, 
+        normalizedData.shirt, 
+        normalizedData.jacket, 
+        normalizedData.pants, 
+        normalizedData.shoes
+      ].filter((item: any): item is OutfitItemRef => !!item && !!item._id);
       
       if (itemRefs.length > 0) {
         const itemIds = itemRefs.map((item: OutfitItemRef) => new ObjectId(item._id.toString()));
@@ -109,13 +144,13 @@ export function registerOutfitRoutes(app: Application, db: any) {
 
       const newOutfit: Outfit = {
         userId: req.user.username,
-        title,
-        hat: hat || null,
-        shirt: shirt || null,
-        jacket: jacket || null,
-        pants: pants || null,
-        shoes: shoes || null,
-        isFavorite: isFavorite || false,
+        title: normalizedData.title,
+        hat: normalizedData.hat || null,
+        shirt: normalizedData.shirt || null,
+        jacket: normalizedData.jacket || null,
+        pants: normalizedData.pants || null,
+        shoes: normalizedData.shoes || null,
+        isFavorite: normalizedData.isFavorite || false,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -166,8 +201,19 @@ export function registerOutfitRoutes(app: Application, db: any) {
 
       const { title, hat, shirt, jacket, pants, shoes, isFavorite } = req.body;
       
+      // Normalize the outfit data - ensure images are stored correctly
+      const normalizedData = normalizeOutfitForStorage({
+        title, hat, shirt, jacket, pants, shoes, isFavorite
+      });
+      
       // Verify that all referenced closet items exist and belong to the user
-      const itemRefs = [hat, shirt, jacket, pants, shoes].filter((item: any): item is OutfitItemRef => !!item && !!item._id);
+      const itemRefs = [
+        normalizedData.hat, 
+        normalizedData.shirt, 
+        normalizedData.jacket, 
+        normalizedData.pants, 
+        normalizedData.shoes
+      ].filter((item: any): item is OutfitItemRef => !!item && !!item._id);
       
       if (itemRefs.length > 0) {
         const itemIds = itemRefs.map((item: OutfitItemRef) => new ObjectId(item._id.toString()));
@@ -192,13 +238,13 @@ export function registerOutfitRoutes(app: Application, db: any) {
       }
 
       const updatedOutfit = {
-        title: title || existingOutfit.title,
-        hat: hat !== undefined ? hat : existingOutfit.hat,
-        shirt: shirt !== undefined ? shirt : existingOutfit.shirt,
-        jacket: jacket !== undefined ? jacket : existingOutfit.jacket,
-        pants: pants !== undefined ? pants : existingOutfit.pants,
-        shoes: shoes !== undefined ? shoes : existingOutfit.shoes,
-        isFavorite: isFavorite !== undefined ? isFavorite : existingOutfit.isFavorite,
+        title: normalizedData.title || existingOutfit.title,
+        hat: normalizedData.hat !== undefined ? normalizedData.hat : existingOutfit.hat,
+        shirt: normalizedData.shirt !== undefined ? normalizedData.shirt : existingOutfit.shirt,
+        jacket: normalizedData.jacket !== undefined ? normalizedData.jacket : existingOutfit.jacket,
+        pants: normalizedData.pants !== undefined ? normalizedData.pants : existingOutfit.pants,
+        shoes: normalizedData.shoes !== undefined ? normalizedData.shoes : existingOutfit.shoes,
+        isFavorite: normalizedData.isFavorite !== undefined ? normalizedData.isFavorite : existingOutfit.isFavorite,
         updatedAt: new Date()
       };
 
