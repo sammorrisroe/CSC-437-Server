@@ -1,4 +1,3 @@
-
 import fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
@@ -7,6 +6,7 @@ import { MongoClient } from "mongodb";
 import path from "path";
 import { registerAuthRoutes, verifyAuthToken } from "./routes/auth";
 import { registerClosetRoutes } from "./routes/closet"; // Import closet routes
+import { registerOutfitRoutes } from "./routes/outfit"; // Import outfit routes
 import { CredentialsProvider } from "./CredentialsProvider";
 
 const PORT = process.env.PORT || 3000;
@@ -49,6 +49,9 @@ async function setUpServer() {
         
         // Register closet routes (protected)
         registerClosetRoutes(app, db);
+        
+        // Register outfit routes (protected)
+        registerOutfitRoutes(app, db);
 
         app.listen(PORT, () => {
             console.log(`Server running at http://localhost:${PORT}`);
