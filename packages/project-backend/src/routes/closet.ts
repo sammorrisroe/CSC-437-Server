@@ -12,39 +12,9 @@ interface Request extends ExpressRequest {
   file?: Express.Multer.File;
 }
 
-// Setup multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, "../uploads");
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Create unique filename with timestamp and original extension
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
-  },
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    // Accept only image files
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files are allowed") as any);
-    }
-  }
-});
-
 // Interface for the clothing item document
 interface ClothingItem {
+  _id?: string | ObjectId;
   userId: string;
   title: string;
   type: "shirts" | "pants" | "jackets" | "hats" | "shoes";
@@ -56,10 +26,43 @@ interface ClothingItem {
 }
 
 export function registerClosetRoutes(app: Application, db: any) {
-  const closetCollection = db.collection("closet_items");
+  const collectionName = process.env.CLOSET_COLLECTION_NAME || "closet_items";
+  const closetCollection = db.collection(collectionName);
   
-  // Serve static uploads
-  app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+  // Set up upload directory path from environment variable
+  const uploadDir = path.join(__dirname, "..", process.env.IMAGE_UPLOAD_DIR || "uploads");
+  
+  // Ensure upload directory exists
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log(`Created uploads directory: ${uploadDir}`);
+  }
+
+  // Setup multer for file uploads
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      // Create unique filename with timestamp and original extension
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname);
+      cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+    },
+  });
+
+  const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+      // Accept only image files
+      if (file.mimetype.startsWith("image/")) {
+        cb(null, true);
+      } else {
+        cb(new Error("Only image files are allowed") as any);
+      }
+    }
+  });
 
   // Get all clothing items for the authenticated user
   app.get("/api/closet", async (req: Request, res: Response) => {
@@ -72,6 +75,12 @@ export function registerClosetRoutes(app: Application, db: any) {
       const items = await closetCollection.find({ 
         userId: req.user.username 
       }).toArray();
+      
+      console.log("Retrieved items:", items);
+      console.log("Retrieved items with image URLs:", items.map((item: ClothingItem) => ({
+        id: item._id,
+        imageUrl: item.imageUrl
+      })));
       
       res.status(200).json(items);
     } catch (error) {
@@ -92,10 +101,23 @@ export function registerClosetRoutes(app: Application, db: any) {
         return;
       }
 
+      console.log("POST /api/closet request body:", req.body);
+      console.log("POST /api/closet files:", req.file ? "File present" : "No file");
+
       if (!req.file) {
         res.status(400).json({ error: "No image uploaded" });
         return;
       }
+      
+      console.log("File received:", {
+        originalname: req.file?.originalname,
+        mimetype: req.file?.mimetype,
+        size: req.file?.size,
+        destination: req.file?.destination,
+        path: req.file?.path,
+        filename: req.file?.filename,
+        fullPath: path.resolve(req.file?.path || '')
+      });
 
       const { title, type, isFavorite, description } = req.body;
       
@@ -107,8 +129,18 @@ export function registerClosetRoutes(app: Application, db: any) {
         return;
       }
 
+      // Use the filename provided by multer instead of extracting from path
+      const filename = req.file.filename;
+      
       // Create relative URL to the uploaded file
-      const imageUrl = `/uploads/${path.basename(req.file.path)}`;
+      const imageUrl = `/uploads/${filename}`;
+
+      console.log("File upload info:", {
+        file: req.file,
+        path: req.file.path,
+        filename: filename,
+        imageUrl: imageUrl
+      });
 
       const newItem: ClothingItem = {
         userId: req.user.username,
@@ -122,6 +154,11 @@ export function registerClosetRoutes(app: Application, db: any) {
       };
 
       const result = await closetCollection.insertOne(newItem);
+      
+      console.log("Saved new item:", {
+        ...newItem,
+        _id: result.insertedId 
+      });
       
       res.status(201).json({ 
         ...newItem, 
@@ -147,6 +184,9 @@ export function registerClosetRoutes(app: Application, db: any) {
         res.status(401).json({ error: "User not authenticated" });
         return;
       }
+
+      console.log(`PUT /api/closet/${req.params.id} request body:`, req.body);
+      console.log(`PUT /api/closet/${req.params.id} files:`, req.file ? "File present" : "No file");
 
       const id = req.params.id;
       if (!ObjectId.isValid(id)) {
@@ -177,16 +217,45 @@ export function registerClosetRoutes(app: Application, db: any) {
       
       // If new image was uploaded, update the imageUrl and delete old file
       if (req.file) {
+        console.log("File received for update:", {
+          originalname: req.file?.originalname,
+          mimetype: req.file?.mimetype,
+          size: req.file?.size,
+          destination: req.file?.destination,
+          path: req.file?.path,
+          filename: req.file?.filename,
+          fullPath: path.resolve(req.file?.path || '')
+        });
+        
         // Delete the old image file if it exists
         if (existingItem.imageUrl) {
-          const oldFilePath = path.join(__dirname, "..", existingItem.imageUrl.replace(/^\/uploads\//, "uploads/"));
+          const oldFileName = path.basename(existingItem.imageUrl);
+          const oldFilePath = path.join(uploadDir, oldFileName);
+          
+          console.log("Attempting to delete old file:", {
+            oldFileName,
+            oldFilePath,
+            exists: fs.existsSync(oldFilePath)
+          });
+          
           if (fs.existsSync(oldFilePath)) {
             fs.unlinkSync(oldFilePath);
+            console.log(`Deleted old file: ${oldFilePath}`);
           }
         }
         
+        // Use the filename provided by multer
+        const filename = req.file.filename;
+        
         // Set new image URL
-        imageUrl = `/uploads/${path.basename(req.file.path)}`;
+        imageUrl = `/uploads/${filename}`;
+        
+        console.log("Updated file info:", {
+          file: req.file,
+          path: req.file.path,
+          filename: filename,
+          imageUrl: imageUrl
+        });
       }
 
       const updatedItem = {
@@ -202,6 +271,11 @@ export function registerClosetRoutes(app: Application, db: any) {
         { _id: new ObjectId(id) },
         { $set: updatedItem }
       );
+      
+      console.log("Updated item:", {
+        id,
+        ...updatedItem
+      });
       
       res.status(200).json({ 
         ...existingItem, 
@@ -224,6 +298,8 @@ export function registerClosetRoutes(app: Application, db: any) {
         return;
       }
 
+      console.log(`DELETE /api/closet/${req.params.id}`);
+
       const id = req.params.id;
       if (!ObjectId.isValid(id)) {
         res.status(400).json({ error: "Invalid item ID" });
@@ -243,13 +319,24 @@ export function registerClosetRoutes(app: Application, db: any) {
 
       // Delete the image file if it exists
       if (existingItem.imageUrl) {
-        const filePath = path.join(__dirname, "..", existingItem.imageUrl.replace(/^\/uploads\//, "uploads/"));
+        const fileName = path.basename(existingItem.imageUrl);
+        const filePath = path.join(uploadDir, fileName);
+        
+        console.log("Attempting to delete file:", {
+          fileName,
+          filePath,
+          exists: fs.existsSync(filePath)
+        });
+        
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
+          console.log(`Deleted file: ${filePath}`);
         }
       }
 
       await closetCollection.deleteOne({ _id: new ObjectId(id) });
+      
+      console.log(`Item deleted: ${id}`);
       
       res.status(200).json({ message: "Item deleted successfully" });
     } catch (error) {

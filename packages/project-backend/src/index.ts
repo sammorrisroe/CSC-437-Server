@@ -1,4 +1,5 @@
-// src/server.ts
+
+import fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
@@ -21,7 +22,19 @@ async function setUpServer() {
         const credentialsProvider = new CredentialsProvider(mongoClient);
 
         const app = express();
+        
+        // Serve static files from public directory
         app.use(express.static(staticDir));
+        
+        const uploadDir = path.resolve(process.env.IMAGE_UPLOAD_DIR || 'uploads');
+        console.log(`Serving uploaded files from: ${uploadDir}`);
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+          console.log(`Created uploads directory: ${uploadDir}`);
+        }
+        app.use('/uploads', express.static(uploadDir));
+        console.log(`Static route '/uploads' configured to serve from ${uploadDir}`);
+        
         app.use(express.json());
 
         app.get("/hello", (req, res) => {
