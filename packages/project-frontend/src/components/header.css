@@ -5,7 +5,6 @@
   font-style: normal;
 }
 
-
 .header {
   width: 100vw;  
   position: fixed; 
@@ -21,7 +20,6 @@
   padding: 0em 0.5em;  
   height: 5em; 
 }
-
 
 body {
   padding-top: 1em;
@@ -106,14 +104,12 @@ body {
   display: none;
 }
 
-
 .profile-img {
   height: 2em;
   width: 2em;
   border-radius: 50%;
   margin-right: 6px;
 }
-
 
 /* Desktop View */
 @media (min-width: 53em) {
@@ -129,8 +125,6 @@ body {
     white-space: nowrap;
   }
 
-
-
   .nav-links {
     display: flex;
     flex-direction: row;
@@ -143,8 +137,8 @@ body {
     padding: 0 12px;
   }
 }
-/* Add these styles to your existing Header.css file */
 
+/* Profile and Login styles */
 .profile-link {
   display: flex;
   align-items: center;
@@ -161,20 +155,21 @@ body {
   transform: translateY(-2px);
 }
 
+/* Add this to your CSS */
 .login-link {
+  color: #ffffff !important; /* Use !important to override any other styles */
   text-decoration: none;
-  color: var(--primary-color);
   font-weight: 500;
   padding: 8px 15px;
-  border: 1px solid var(--primary-color);
+  border: 1px solid white;
   border-radius: 4px;
   transition: background-color 0.3s, color 0.3s;
 }
-
-.login-link:hover {
-  background-color: var(--primary-color);
-  color: white;
+.dark-mode .login-link {
+  color: var(--text-color-light);
 }
+
+
 
 /* Remove the dark mode toggle from header since it's moved to profile page */
 .dark-mode-toggle {
