@@ -97,7 +97,7 @@ const App: React.FC = () => {
         
         <Route path="/outfits" element={
           <ProtectedRoute authToken={authToken}>
-            <OutfitPage />
+            <OutfitPage authToken={authToken} />
           </ProtectedRoute>
         } />
       </Routes>

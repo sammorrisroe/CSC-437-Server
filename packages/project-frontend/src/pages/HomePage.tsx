@@ -41,11 +41,6 @@ const HomePage: React.FC<HomePageProps> = ({ isLoggedIn, showLoginPrompt, onDism
           <p>Mix and match your clothes to create perfect outfits for any occasion.</p>
           {!isLoggedIn && <p className="login-required">Login required</p>}
         </div>
-        
-        <div className="feature-card">
-          <h3>Get Inspired</h3>
-          <p>Browse curated looks and get recommendations based on your style.</p>
-        </div>
       </div>
       
       {/* Call to action for non-logged in users */}
