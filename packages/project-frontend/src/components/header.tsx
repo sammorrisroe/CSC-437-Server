@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router";
-import "./Header.css";
+import "./header.css";
 import logo from "../assets/logo.png";
 import defaultUser from "../assets/user.png";
 
